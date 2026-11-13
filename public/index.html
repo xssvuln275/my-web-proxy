@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>MyProxy</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="home">
+  <main class="launcher">
+    <div class="brand">MyProxy</div>
+    <h1>Browse privately</h1>
+    <p class="subtitle">Enter a website address to open it in a clean new tab.</p>
+
+    <form id="launch-form" autocomplete="off">
+      <label class="sr-only" for="address">Website address</label>
+      <input
+        id="address"
+        name="address"
+        type="text"
+        placeholder="Enter a website, e.g. https://example.com"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        required
+      >
+      <button type="submit">Open website ↗</button>
+    </form>
+
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+    <p class="note">Some websites may block proxy access or limit certain features.</p>
+  </main>
+  <script type="module" src="/js/home.js"></script>
+</body>
+</html>
