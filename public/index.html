@@ -1,0 +1,161 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyProxy - Web Access</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0b1020;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 38px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: #7185ff;
+    }
+
+    .subtitle {
+      color: #9ba6c5;
+      margin-bottom: 35px;
+      font-size: 15px;
+    }
+
+    .search-box {
+      display: flex;
+      background: #171e33;
+      border: 1px solid #303b5b;
+      padding: 7px;
+      border-radius: 14px;
+      gap: 8px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      padding: 14px;
+      font-size: 15px;
+    }
+
+    input::placeholder {
+      color: #78839e;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      background: #7185ff;
+      color: white;
+      font-weight: bold;
+      padding: 0 25px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    button:hover {
+      background: #596df0;
+    }
+
+    #status {
+      color: #9ba6c5;
+      margin-top: 22px;
+      min-height: 24px;
+      font-size: 14px;
+    }
+
+    .footer {
+      margin-top: 65px;
+      color: #65708d;
+      font-size: 12px;
+    }
+
+    @media(max-width: 480px) {
+      .search-box {
+        flex-direction: column;
+      }
+
+      button {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="logo">My<span>Proxy</span></div>
+    <p class="subtitle">
+      A simple way to access web content.
+    </p>
+
+    <form class="search-box" id="proxyForm">
+      <input
+        type="url"
+        id="url"
+        placeholder="Enter a website URL..."
+        required
+      >
+      <button type="submit">GO →</button>
+    </form>
+
+    <p id="status"></p>
+
+    <div class="footer">
+      MyProxy &copy; 2026
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("proxyForm");
+    const input = document.getElementById("url");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      status.textContent = "Checking website...";
+
+      try {
+        const response = await fetch(
+          "/api/fetch?url=" + encodeURIComponent(input.value)
+        );
+
+        const data = await response.json();
+
+        status.textContent = data.error || "Request completed.";
+      } catch {
+        status.textContent = "Could not connect to the server.";
+      }
+    });
+  </script>
+</body>
+</html>
