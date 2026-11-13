@@ -2,357 +2,261 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#090d19">
-    <title>MyProxy - Browse the Web</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d19">
+  <title>MyProxy Browser</title>
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        body {
-            min-height: 100vh;
-            background: #090d19;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
+    body {
+      min-height: 100vh;
+      background: #090d19;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
 
-        header {
-            height: 75px;
-            padding: 0 7%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #0d1322;
-            border-bottom: 1px solid #20283c;
-        }
+    header {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6%;
+      background: #10182a;
+      border-bottom: 1px solid #28334c;
+    }
 
-        .logo {
-            font-size: 25px;
-            font-weight: 800;
-        }
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+    }
 
-        .logo span {
-            color: #7185ff;
-        }
+    .logo span {
+      color: #7185ff;
+    }
 
-        .server-status {
-            color: #9ba9c5;
-            font-size: 13px;
-        }
+    .online {
+      color: #5bd6a0;
+      font-size: 13px;
+    }
 
-        .server-status::before {
-            content: "";
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #45d69b;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
+    main {
+      max-width: 850px;
+      width: 90%;
+      margin: 110px auto;
+      text-align: center;
+    }
 
-        main {
-            width: 90%;
-            max-width: 900px;
-            margin: auto;
-        }
+    h1 {
+      font-size: clamp(40px, 7vw, 65px);
+      letter-spacing: -3px;
+      margin-bottom: 18px;
+    }
 
-        .hero {
-            text-align: center;
-            padding: 110px 0 55px;
-        }
+    h1 span {
+      color: #7185ff;
+    }
 
-        .tag {
-            display: inline-block;
-            background: #182344;
-            border: 1px solid #293b70;
-            color: #9aabff;
-            padding: 9px 16px;
-            border-radius: 30px;
-            font-size: 12px;
-            margin-bottom: 25px;
-        }
+    .description {
+      color: #9ba9c5;
+      line-height: 1.7;
+      margin-bottom: 35px;
+    }
 
-        h1 {
-            font-size: clamp(40px, 7vw, 65px);
-            letter-spacing: -3px;
-            margin-bottom: 20px;
-        }
+    .address-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      background: #151e32;
+      border: 1px solid #303c5c;
+      border-radius: 13px;
+    }
 
-        h1 span {
-            color: #7185ff;
-        }
+    .address-bar:focus-within {
+      border-color: #7185ff;
+    }
 
-        .description {
-            color: #9ba9c5;
-            font-size: 16px;
-            line-height: 1.7;
-            max-width: 550px;
-            margin: auto;
-        }
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 15px;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-size: 15px;
+    }
 
-        .search-box {
-            display: flex;
-            gap: 10px;
-            padding: 8px;
-            margin-top: 38px;
-            background: #151e32;
-            border: 1px solid #303c5c;
-            border-radius: 15px;
-        }
+    input::placeholder {
+      color: #75829e;
+    }
 
-        .search-box:focus-within {
-            border-color: #7185ff;
-        }
+    button {
+      padding: 14px 24px;
+      background: #7185ff;
+      border: none;
+      border-radius: 9px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-        input {
-            flex: 1;
-            min-width: 0;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: white;
-            padding: 14px;
-            font-size: 15px;
-        }
+    button:hover {
+      background: #596ff0;
+    }
 
-        input::placeholder {
-            color: #71809d;
-        }
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
 
-        button {
-            background: #7185ff;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 15px 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
+    .message {
+      color: #9ba9c5;
+      font-size: 13px;
+      margin-top: 20px;
+      min-height: 22px;
+    }
 
-        button:hover {
-            background: #596ff0;
-        }
+    .browser {
+      display: none;
+      margin-top: 35px;
+      text-align: left;
+    }
 
-        button:disabled {
-            opacity: 0.6;
-            cursor: wait;
-        }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #151e32;
+      border: 1px solid #303c5c;
+      border-radius: 12px 12px 0 0;
+    }
 
-        .hint {
-            color: #65728e;
-            font-size: 12px;
-            margin-top: 15px;
-        }
+    .tool-button {
+      background: #26324d;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 17px;
+    }
 
-        .status {
-            margin-top: 22px;
-            min-height: 25px;
-            color: #a5b2ce;
-            font-size: 13px;
-        }
+    .current-address {
+      flex: 1;
+      min-width: 0;
+      color: #aab7d0;
+      font-size: 12px;
+      padding: 10px;
+      overflow-wrap: anywhere;
+    }
 
-        .results {
-            display: none;
-            margin-top: 40px;
-            background: #111a2c;
-            border: 1px solid #273450;
-            border-radius: 15px;
-            overflow: hidden;
-            text-align: left;
-        }
+    .website {
+      min-height: 500px;
+      background: white;
+      border: 1px solid #303c5c;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      color: #111;
+      padding: 25px;
+    }
 
-        .results-header {
-            padding: 18px 22px;
-            background: #17223a;
-            border-bottom: 1px solid #293653;
-        }
+    .website iframe {
+      width: 100%;
+      height: 650px;
+      border: none;
+      background: white;
+    }
 
-        .results-title {
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
+    footer {
+      padding: 25px;
+      text-align: center;
+      color: #66738f;
+      font-size: 12px;
+      border-top: 1px solid #20283c;
+    }
 
-        .results-address {
-            color: #8190ae;
-            font-size: 12px;
-            overflow-wrap: anywhere;
-        }
+    @media(max-width: 600px) {
+      main {
+        margin: 70px auto;
+      }
 
-        .result-content {
-            padding: 25px;
-            color: #c5cee0;
-            font-size: 14px;
-            line-height: 1.9;
-            overflow-wrap: anywhere;
-            white-space: pre-wrap;
-            max-height: 500px;
-            overflow-y: auto;
-        }
+      .address-bar {
+        flex-direction: column;
+      }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 70px 0 90px;
-        }
+      input, .address-bar button {
+        width: 100%;
+      }
 
-        .feature {
-            background: #111a2c;
-            border: 1px solid #202d48;
-            border-radius: 13px;
-            padding: 22px;
-        }
+      .toolbar {
+        flex-wrap: wrap;
+      }
 
-        .feature-icon {
-            font-size: 25px;
-            margin-bottom: 15px;
-        }
-
-        .feature h3 {
-            font-size: 14px;
-            margin-bottom: 9px;
-        }
-
-        .feature p {
-            color: #8492ad;
-            font-size: 12px;
-            line-height: 1.7;
-        }
-
-        footer {
-            border-top: 1px solid #20283c;
-            padding: 25px;
-            text-align: center;
-            color: #64718b;
-            font-size: 12px;
-        }
-
-        @media(max-width: 650px) {
-            header {
-                padding: 0 5%;
-            }
-
-            .hero {
-                padding-top: 75px;
-            }
-
-            .search-box {
-                flex-direction: column;
-            }
-
-            button {
-                width: 100%;
-            }
-
-            .features {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+      .website {
+        padding: 8px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-    <header>
-        <div class="logo">My<span>Proxy</span></div>
-        <div class="server-status">Server online</div>
-    </header>
+  <header>
+    <div class="logo">My<span>Proxy</span></div>
+    <div class="online">● Online</div>
+  </header>
 
-    <main>
+  <main>
 
-        <section class="hero">
+    <h1>Browse the <span>Web.</span></h1>
 
-            <div class="tag">✦ YOUR PERSONAL WEB PROXY</div>
+    <p class="description">
+      Enter a website address and open it in your personal proxy browser.
+    </p>
 
-            <h1>Browse the <span>Web.</span></h1>
+    <form class="address-bar" id="searchForm">
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="Enter website URL..."
+        autocomplete="url"
+        required
+      >
+      <button type="submit" id="goButton">GO →</button>
+    </form>
 
-            <p class="description">
-                Enter a website address to retrieve its
-                available text content through your proxy server.
-            </p>
+    <div class="message" id="message" aria-live="polite">
+      Try https://example.com
+    </div>
 
-            <form class="search-box" id="proxyForm">
+    <section class="browser" id="browser">
 
-                <input
-                    type="url"
-                    id="url"
-                    placeholder="https://example.com"
-                    autocomplete="url"
-                    required
-                >
+      <div class="toolbar">
+        <button class="tool-button" id="backButton" title="Back">←</button>
+        <button class="tool-button" id="forwardButton" title="Forward">→</button>
+        <button class="tool-button" id="refreshButton" title="Refresh">↻</button>
 
-                <button type="submit" id="goButton">
-                    GO →
-                </button>
+        <div class="current-address" id="currentAddress"></div>
+      </div>
 
-            </form>
+      <div class="website" id="website">
+        <p>Loading website...</p>
+      </div>
 
-            <p class="hint">
-                Enter a complete website address.
-            </p>
+    </section>
 
-            <div
-                class="status"
-                id="status"
-                aria-live="polite"
-            ></div>
+  </main>
 
-            <section class="results" id="results">
+  <footer>
+    MyProxy © 2026 · Personal Proxy Browser
+  </footer>
 
-                <div class="results-header">
-
-                    <div class="results-title" id="resultTitle">
-                        Website content
-                    </div>
-
-                    <div class="results-address" id="resultAddress"></div>
-
-                </div>
-
-                <div
-                    class="result-content"
-                    id="resultContent"
-                ></div>
-
-            </section>
-
-        </section>
-
-        <section class="features">
-
-            <div class="feature">
-                <div class="feature-icon">⚡</div>
-                <h3>Simple Access</h3>
-                <p>Enter a website address and submit your request.</p>
-            </div>
-
-            <div class="feature">
-                <div class="feature-icon">🔒</div>
-                <h3>Server Protection</h3>
-                <p>Requests pass through destination checks.</p>
-            </div>
-
-            <div class="feature">
-                <div class="feature-icon">🌐</div>
-                <h3>Web Content</h3>
-                <p>Retrieve supported website text through your server.</p>
-            </div>
-
-        </section>
-
-    </main>
-
-    <footer>
-        MyProxy © 2026 · Personal Web Proxy
-    </footer>
-
-    <script src="/app.js" defer></script>
+  <script src="/app.js" defer></script>
 
 </body>
 </html>
