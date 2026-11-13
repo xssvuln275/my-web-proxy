@@ -16,19 +16,27 @@ const ALLOWED_HOSTS = new Set(
     .filter(Boolean)
 );
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'self'"]
-    }
+// Protect the MyProxy homepage.
+// Proxied pages have their own response policies.
+app.use((req, res, next) => {
+  if (req.path.startsWith("/browse/")) {
+    return next();
   }
-}));
+
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'"]
+      }
+    }
+  })(req, res, next);
+});
 
 app.use(express.static("public"));
 
@@ -54,7 +62,7 @@ app.use("/browse/:host", (req, res, next) => {
     selfHandleResponse: true,
 
     on: {
-      proxyReq: (proxyReq) => {
+      proxyReq: proxyReq => {
         proxyReq.setHeader("User-Agent", "MyProxy/2.0");
       },
 
@@ -68,7 +76,10 @@ app.use("/browse/:host", (req, res, next) => {
 
           if (location) {
             try {
-              const destination = new URL(location, `https://${host}`);
+              const destination = new URL(
+                location,
+                `https://${host}`
+              );
 
               if (
                 destination.protocol === "https:" &&
@@ -88,6 +99,15 @@ app.use("/browse/:host", (req, res, next) => {
           }
 
           const type = proxyRes.headers["content-type"] || "";
+
+          // Preserve images, fonts and other binary resources.
+          if (
+            !type.includes("text/html") &&
+            !type.includes("text/css")
+          ) {
+            return buffer;
+          }
+
           let content = buffer.toString("utf8");
 
           if (type.includes("text/html")) {
@@ -109,7 +129,10 @@ app.use("/browse/:host", (req, res, next) => {
               `$1=$2${prefix}/`
             );
 
-            content = content.replace(/<base\b[^>]*>/gi, "");
+            content = content.replace(
+              /<base\b[^>]*>/gi,
+              ""
+            );
           }
 
           if (type.includes("text/css")) {
