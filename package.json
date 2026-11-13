@@ -10,11 +10,11 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@mercuryworkshop/libcurl-transport": "^2.0.5",
+    "@mercuryworkshop/libcurl-transport": "2.0.5",
     "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
     "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@mercuryworkshop/scramjet-utils": "0.0.3",
-    "@mercuryworkshop/wisp-js": "^0.4.1",
-    "express": "^4.21.2"
+    "@mercuryworkshop/wisp-js": "0.4.1",
+    "express": "4.21.2"
   }
 }

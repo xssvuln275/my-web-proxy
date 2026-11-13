@@ -1,7 +1,7 @@
 importScripts("/controller/controller.sw.js");
 
 const shellCachePrefix = "my-minimal-proxy-shell-";
-const shellCache = shellCachePrefix + "v1";
+const shellCache = shellCachePrefix + "v2";
 const runtimeRoots = [
 	"/libcurl/",
 	"/wisp/",
