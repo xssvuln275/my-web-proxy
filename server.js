@@ -10,47 +10,106 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(express.static("public"));
 
+function isPublicIP(ip) {
+  if (net.isIP(ip) === 4) {
+    const p = ip.split(".").map(Number);
+
+    return !(
+      p[0] === 0 ||
+      p[0] === 10 ||
+      p[0] === 127 ||
+      p[0] >= 224 ||
+      (p[0] === 169 && p[1] === 254) ||
+      (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
+      (p[0] === 192 && p[1] === 168)
+    );
+  }
+
+  return false;
+}
+
 app.get("/api/fetch", async (req, res) => {
   try {
-    const target = req.query.url;
+    let target = new URL(req.query.url);
 
-    if (!target) {
-      return res.status(400).json({ error: "Enter a URL." });
+    if (!["http:", "https:"].includes(target.protocol)) {
+      return res.status(400).json({ error: "Only HTTP and HTTPS are supported." });
     }
 
-    const parsed = new URL(target);
-
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return res.status(400).json({ error: "Only HTTP and HTTPS are allowed." });
+    if (target.username || target.password) {
+      return res.status(400).json({ error: "URL credentials are not allowed." });
     }
 
-    if (parsed.username || parsed.password) {
-      return res.status(400).json({ error: "Credentials in URLs are not allowed." });
+    const addresses = await dns.lookup(target.hostname, { all: true });
+
+    if (!addresses.length || addresses.some(a => !isPublicIP(a.address))) {
+      return res.status(403).json({ error: "Destination not allowed." });
     }
 
-    const addresses = await dns.lookup(parsed.hostname, { all: true });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-    if (!addresses.length || addresses.some(a => {
-      const ip = a.address;
-      return net.isIP(ip) === 4
-        ? /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.)/.test(ip)
-        : !ip.startsWith("2") && ip !== "::1";
-    })) {
-      return res.status(403).json({ error: "This destination is not allowed." });
+    try {
+      const response = await fetch(target, {
+        redirect: "manual",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "MyProxy/1.0",
+          "Accept": "text/html,text/plain"
+        }
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        return res.status(400).json({
+          error: "Redirects are not supported yet."
+        });
+      }
+
+      const type = response.headers.get("content-type") || "";
+
+      if (!type.includes("text/html") && !type.includes("text/plain")) {
+        return res.status(415).json({
+          error: "This version supports HTML and plain text only."
+        });
+      }
+
+      if (!response.ok) {
+        return res.status(502).json({
+          error: `Website returned status ${response.status}.`
+        });
+      }
+
+      const body = await response.text();
+
+      if (Buffer.byteLength(body, "utf8") > 1024 * 1024) {
+        return res.status(413).json({ error: "Website is too large." });
+      }
+
+      const text = body
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      res.json({
+        title: target.hostname,
+        content: text
+      });
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return res.status(501).json({
-      error: "Backend security check passed. Website fetching will be added next."
-    });
   } catch {
-    return res.status(400).json({ error: "Invalid URL or DNS lookup failed." });
+    res.status(400).json({
+      error: "Could not retrieve this website."
+    });
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("My Web Proxy is running!");
-});
-
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("MyProxy is running on port " + PORT);
 });
