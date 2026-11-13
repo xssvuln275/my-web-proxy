@@ -1,59 +1,123 @@
-import { engine } from "./engine.js";
-import { resolveInput } from "./url.js";
 
-const frame = document.querySelector("#proxy-frame");
-const params = new URLSearchParams(location.search);
-const address = params.get("address") ?? "";
+const status = document.getElementById("status");
+const iframe = document.getElementById("site");
 
-const showError = (message) => {
-  document.title = "Website unavailable";
-  const safe = String(message).replace(/[&<>"]/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;"
-  })[char]);
-  frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unavailable</title><style>body{font:16px system-ui;padding:32px;color:#222}h2{font-size:20px}</style></head><body><h2>This website could not be opened</h2><p>${safe}</p></body></html>`;
-};
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
 
-async function start() {
-  const { url, kind } = resolveInput(address, "https://duckduckgo.com/?q=%s");
+    script.src = src;
 
-  if (!url || kind === "empty" || kind === "blocked") {
-    showError("The address is empty or is not allowed.");
-    return;
-  }
+    script.onload = () => resolve();
 
-  if (kind === "external") {
-    location.replace(url);
-    return;
-  }
+    script.onerror = () => {
+      reject(new Error("Failed to load: " + src));
+    };
 
-  try {
-    document.title = new URL(url).hostname;
-    const session = await engine.createSession(frame, {
-      url: (nextUrl) => {
-        try {
-          document.title = new URL(nextUrl).hostname;
-        } catch {
-          // Keep the existing title if the proxied URL is unusual.
-        }
-      },
-      error: (error) => {
-        console.error("Proxy navigation failed:", error);
-      },
-      escape: (nextUrl) => {
-        // Links that try to escape into a separate tab remain inside this
-        // clean viewer tab instead.
-        session.go(nextUrl);
-      }
-    });
-
-    session.go(url);
-  } catch (error) {
-    console.error(error);
-    showError("The proxy engine could not start. Refresh this tab and try again.");
-  }
+    document.head.appendChild(script);
+  });
 }
 
-start();
+async function startProxy() {
+  // Get the requested website.
+  const params = new URLSearchParams(
+    window.location.search
+  );
+
+  const address = params.get("address");
+
+  if (!address) {
+    throw new Error("No website address was provided.");
+  }
+
+  const destination = new URL(address);
+
+  if (
+    destination.protocol !== "https:" &&
+    destination.protocol !== "http:"
+  ) {
+    throw new Error("Only HTTP and HTTPS websites are supported.");
+  }
+
+  // Register service worker.
+  const registration =
+    await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none"
+    });
+
+  await navigator.serviceWorker.ready;
+
+  // Wait until this page is controlled.
+  if (!navigator.serviceWorker.controller) {
+    await new Promise((resolve) => {
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        resolve,
+        { once: true }
+      );
+    });
+  }
+
+  const serviceworker =
+    navigator.serviceWorker.controller ||
+    registration.active;
+
+  if (!serviceworker) {
+    throw new Error("Service worker is not active.");
+  }
+
+  // Load Scramjet scripts.
+  await loadScript("/scram/scramjet.js");
+  await loadScript("/controller/controller.api.js");
+  await loadScript("/utils/scramjet-utils.js");
+
+  const api = window.$scramjetController;
+
+  if (!api || !api.Controller) {
+    throw new Error("Scramjet Controller did not initialize.");
+  }
+
+  // Initialize transport.
+  const { default: LibcurlClient } =
+    await import("/libcurl/index.mjs");
+
+  const websocketProtocol =
+    location.protocol === "https:" ? "wss:" : "ws:";
+
+  const transport = new LibcurlClient({
+    wisp: `${websocketProtocol}//${location.host}/wisp/`
+  });
+
+  // Initialize Scramjet.
+  const controller = new api.Controller({
+    serviceworker,
+    transport,
+    config: {
+      prefix: "/~/sj/",
+      scramjetPath: "/scram/scramjet.js",
+      wasmPath: "/scram/scramjet.wasm",
+      injectPath: "/controller/controller.inject.js"
+    }
+  });
+
+  // Wait for controller initialization.
+  await controller.wait();
+
+  console.log("Scramjet controller ready.");
+
+  // Create the browser frame.
+  const frame = controller.createFrame(iframe);
+
+  // Open requested website.
+  frame.go(destination.href);
+
+  status.hidden = true;
+}
+
+startProxy().catch((error) => {
+  console.error("MyProxy error:", error);
+
+  status.textContent =
+    "Could not start proxy: " + error.message;
+});
